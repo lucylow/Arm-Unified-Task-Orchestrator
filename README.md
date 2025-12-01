@@ -1,10 +1,9 @@
-# AutoRL ARM Edition - Hackathon Submission
+# 🤖 Arm-Unified Task Orchestrator *
 
 <div align="center">
 
-# 🤖 AutoRL ARM Edition
+### *On-Device AI-Powered Mobile Automation for ARM Processors* Arm-Unified Task Orchestrator (A.U.T.O.) shows that an Arm-powered mobile device can function as a **fully self-contained autonomous agent**—capable of perceiving, planning, and executing tasks in real time without any cloud services.
 
-### *On-Device AI-Powered Mobile Automation for ARM Processors*
 
 [![ARM](https://img.shields.io/badge/ARM-Architecture-blue.svg)](https://developer.arm.com/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
