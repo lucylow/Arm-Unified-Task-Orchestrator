@@ -231,19 +231,19 @@ export default function Dashboard() {
 
       {/* AI Agent Features Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-3 rounded-full bg-primary/20">
                 <Brain className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">AI Agent Status</p>
-                <p className="text-2xl font-bold">Intelligent</p>
+                <p className="text-sm font-medium text-muted-foreground">Cloud Planner</p>
+                <p className="text-2xl font-bold">Active</p>
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              LLM-powered task planning & execution
+              Interactive AI planning with step-by-step visualization
             </p>
           </CardContent>
         </Card>

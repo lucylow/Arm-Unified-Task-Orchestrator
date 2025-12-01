@@ -1,16 +1,16 @@
 """Application Layer - Use Cases (Business Logic)"""
 import time
 import asyncio
+import logging
 from typing import Optional
-from src.domain.entities import MobileTask, TaskResult, TaskStatus
-from src.domain.repositories import DeviceRepository, TaskRepository, ResultRepository
-from src.tools.action_execution import ActionExecutor
-from src.perception.visual_perception import VisualPerception
-from src.llm.llm_planner import LLMPlanner
-from src.runtime.recovery import RecoveryManager
-from src.runtime.logging import MaskedLogger
-from src.production_readiness.logging_utils import log_event, store_secure_log
-from src.production_readiness.metrics_server import record_task_metrics
+from domain.entities import MobileTask, TaskResult, TaskStatus
+from domain.repositories import DeviceRepository, TaskRepository, ResultRepository
+from tools.action_execution import ActionExecutor
+from perception.visual_perception import VisualPerception
+from llm.llm_planner import LLMPlanner
+from error_handling.recovery import RecoveryManager
+from production_readiness.logging_utils import log_event, store_secure_log
+from production_readiness.metrics_server import record_task_metrics
 from selenium.common.exceptions import WebDriverException, TimeoutException
 
 
@@ -31,7 +31,7 @@ class ExecuteTaskUseCase:
         self.device_repo = device_repo
         self.task_repo = task_repo
         self.result_repo = result_repo
-        self.logger = MaskedLogger(name="ExecuteTaskUseCase")
+        self.logger = logging.getLogger("ExecuteTaskUseCase")
     
     async def execute(self, task: MobileTask) -> TaskResult:
         """Main execution logic for a task"""

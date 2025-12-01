@@ -2,7 +2,7 @@
 from typing import Dict, Any, Optional, List
 from abc import ABC, abstractmethod
 import asyncio
-from src.runtime.logging import MaskedLogger
+import logging
 
 
 class Agent(ABC):
@@ -10,7 +10,7 @@ class Agent(ABC):
     
     def __init__(self, name: str):
         self.name = name
-        self.logger = MaskedLogger(name=f"Agent_{name}")
+        self.logger = logging.getLogger(f"Agent_{name}")
     
     @abstractmethod
     async def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -176,7 +176,7 @@ class AgentOrchestrator:
             'execution': ExecutionAgent(executor, visual_perception),
             'reflection': ReflectionAgent(llm_planner)
         }
-        self.logger = MaskedLogger(name="AgentOrchestrator")
+        self.logger = logging.getLogger("AgentOrchestrator")
     
     async def execute_workflow(
         self,

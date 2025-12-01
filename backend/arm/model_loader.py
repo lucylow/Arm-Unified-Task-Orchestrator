@@ -17,18 +17,24 @@ logger = logging.getLogger(__name__)
 class ARMModelLoader:
     """Loads and manages ARM-optimized AI models"""
     
-    def __init__(self, models_dir: str = "models/arm"):
+    def __init__(self, models_dir: str = "models/arm", enable_caching: bool = True):
         self.models_dir = Path(models_dir)
         self.loaded_models: Dict[str, Any] = {}
         self.model_info: Dict[str, Dict] = {}
+        self.enable_caching = enable_caching
+        self._cache_stats = {
+            'hits': 0,
+            'misses': 0,
+            'loads': 0,
+        }
         
         # Ensure models directory exists
         self.models_dir.mkdir(parents=True, exist_ok=True)
         
-        logger.info(f"ARM Model Loader initialized (models_dir={self.models_dir})")
+        logger.info(f"ARM Model Loader initialized (models_dir={self.models_dir}, caching={enable_caching})")
     
     def load_pytorch_mobile_model(self, model_path: str, model_name: str) -> Any:
-        """Load PyTorch Mobile model"""
+        """Load PyTorch Mobile model with quantization verification"""
         if model_name in self.loaded_models:
             logger.info(f"Model '{model_name}' already loaded (cached)")
             return self.loaded_models[model_name]
@@ -48,6 +54,9 @@ class ARMModelLoader:
             model = torch.jit.load(str(full_path))
             model.eval()
             
+            # Check if model is quantized
+            is_quantized = self._check_pytorch_quantization(model)
+            
             load_time = (time.time() - start_time) * 1000
             
             # Cache model
@@ -57,10 +66,13 @@ class ARMModelLoader:
                 'path': str(full_path),
                 'size_mb': full_path.stat().st_size / (1024 * 1024),
                 'load_time_ms': load_time,
+                'quantized': is_quantized,
+                'quantization_type': self._get_quantization_type(model) if is_quantized else None,
             }
             
             logger.info(f"Loaded '{model_name}' in {load_time:.1f}ms "
-                       f"(size={self.model_info[model_name]['size_mb']:.1f}MB)")
+                       f"(size={self.model_info[model_name]['size_mb']:.1f}MB, "
+                       f"quantized={is_quantized})")
             
             return model
             
@@ -70,6 +82,42 @@ class ARMModelLoader:
         except Exception as e:
             logger.error(f"Failed to load PyTorch Mobile model '{model_name}': {e}")
             raise
+    
+    def _check_pytorch_quantization(self, model) -> bool:
+        """Check if PyTorch model is quantized"""
+        try:
+            import torch
+            # Check for quantized modules
+            for name, module in model.named_modules():
+                if isinstance(module, (torch.quantization.QuantStub, 
+                                       torch.quantization.DeQuantStub,
+                                       torch.nn.quantized.Quantize,
+                                       torch.nn.quantized.DeQuantize)):
+                    return True
+                # Check for quantized parameters
+                if hasattr(module, 'weight') and hasattr(module.weight, 'dtype'):
+                    if 'qint' in str(module.weight.dtype):
+                        return True
+        except Exception:
+            pass
+        return False
+    
+    def _get_quantization_type(self, model) -> Optional[str]:
+        """Get quantization type if model is quantized"""
+        try:
+            import torch
+            for name, module in model.named_modules():
+                if hasattr(module, 'weight') and hasattr(module.weight, 'dtype'):
+                    dtype_str = str(module.weight.dtype)
+                    if 'qint8' in dtype_str:
+                        return 'INT8'
+                    elif 'qint4' in dtype_str:
+                        return 'INT4'
+                    elif 'quint8' in dtype_str:
+                        return 'UINT8'
+        except Exception:
+            pass
+        return None
     
     def load_onnx_model(self, model_path: str, model_name: str) -> Any:
         """Load ONNX Runtime model"""
@@ -172,8 +220,15 @@ class ARMModelLoader:
             raise
     
     def get_model(self, model_name: str) -> Optional[Any]:
-        """Get loaded model by name"""
-        return self.loaded_models.get(model_name)
+        """Get loaded model by name (with cache statistics)"""
+        if model_name in self.loaded_models:
+            if self.enable_caching:
+                self._cache_stats['hits'] += 1
+            return self.loaded_models.get(model_name)
+        else:
+            if self.enable_caching:
+                self._cache_stats['misses'] += 1
+            return None
     
     def get_model_info(self, model_name: str) -> Optional[Dict]:
         """Get model information"""
@@ -219,18 +274,26 @@ class ARMModelLoader:
     
     def get_summary(self) -> str:
         """Get loader summary"""
+        cache_hit_rate = 0.0
+        if self._cache_stats['hits'] + self._cache_stats['misses'] > 0:
+            cache_hit_rate = (self._cache_stats['hits'] / 
+                            (self._cache_stats['hits'] + self._cache_stats['misses'])) * 100
+        
         summary = f"""
 ARM Model Loader Summary
 ========================
 Models Directory: {self.models_dir}
 Loaded Models: {len(self.loaded_models)}
+Caching: {'Enabled' if self.enable_caching else 'Disabled'}
+Cache Stats: {self._cache_stats['hits']} hits, {self._cache_stats['misses']} misses ({cache_hit_rate:.1f}% hit rate)
 
 """
         
         if self.loaded_models:
             summary += "Loaded Models:\n"
             for name, info in self.model_info.items():
-                summary += f"  - {name} ({info['type']}): {info['size_mb']:.1f}MB\n"
+                quant_info = f", {info.get('quantization_type', 'FP32')}" if info.get('quantized') else ""
+                summary += f"  - {name} ({info['type']}): {info['size_mb']:.1f}MB{quant_info}\n"
         else:
             summary += "No models currently loaded.\n"
         

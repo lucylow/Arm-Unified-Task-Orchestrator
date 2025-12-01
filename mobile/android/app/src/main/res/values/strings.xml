@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AutoRL</string>
+    <string name="app_subtitle">On-Device AI for Arm Processors</string>
+    
+    <!-- Status messages -->
+    <string name="status">Status</string>
+    <string name="ready_to_start">Ready to start</string>
+    <string name="loading_model">Loading model…</string>
+    <string name="model_loaded">Model loaded successfully</string>
+    <string name="running_inference">Running inference…</string>
+    <string name="inference_complete">Inference completed in %1$d ms</string>
+    
+    <!-- Results -->
+    <string name="results">Results</string>
+    <string name="latency_format">Latency: %1$d ms</string>
+    
+    <!-- Actions -->
+    <string name="start_task">Start Task</string>
+    <string name="retry">Retry</string>
+    
+    <!-- Errors -->
+    <string name="error_model_not_found">Model file not found</string>
+    <string name="error_inference_failed">Inference failed</string>
+    <string name="error_unknown">An unknown error occurred</string>
+</resources>
+

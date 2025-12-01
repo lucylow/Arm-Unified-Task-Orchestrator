@@ -1,7 +1,7 @@
 """Infrastructure Layer - In-Memory Task Repository Implementation"""
 from typing import Optional, List, Dict
-from src.domain.repositories import TaskRepository
-from src.domain.entities import MobileTask, TaskStatus
+from domain.repositories import TaskRepository
+from domain.entities import MobileTask, TaskStatus
 
 
 class InMemoryTaskRepository(TaskRepository):

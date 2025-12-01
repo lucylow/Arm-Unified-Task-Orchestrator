@@ -1,7 +1,7 @@
 """Infrastructure Layer - Concrete Device Repository Implementation"""
 from typing import Optional
-from src.domain.repositories import DeviceRepository
-from src.runtime.device_manager import Device, DeviceManager
+from domain.repositories import DeviceRepository
+from runtime.device_manager import Device, DeviceManager
 
 
 class DeviceRepositoryImpl(DeviceRepository):

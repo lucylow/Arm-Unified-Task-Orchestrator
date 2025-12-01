@@ -8,6 +8,7 @@ memory footprint, inference latency, and power consumption.
 import time
 import psutil
 import threading
+import os
 from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
 from collections import deque
@@ -24,6 +25,8 @@ class PerformanceMetrics:
     memory_mb: float
     inference_latency_ms: Optional[float] = None
     model_name: Optional[str] = None
+    power_mw: Optional[float] = None
+    temperature_c: Optional[float] = None
     
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -78,16 +81,104 @@ class ARMPerformanceMonitor:
             time.sleep(interval)
     
     def _capture_metrics(self) -> PerformanceMetrics:
-        """Capture current performance metrics"""
+        """Capture current performance metrics including power and thermal"""
         cpu_percent = self.process.cpu_percent(interval=0.1)
         memory_info = self.process.memory_info()
         memory_mb = memory_info.rss / (1024 * 1024)  # Convert to MB
+        
+        # Get power consumption estimate (if available)
+        power_mw = self._estimate_power_consumption(cpu_percent)
+        
+        # Get CPU temperature (if available)
+        temperature_c = self._get_cpu_temperature()
         
         return PerformanceMetrics(
             timestamp=time.time(),
             cpu_percent=cpu_percent,
             memory_mb=memory_mb,
+            power_mw=power_mw,
+            temperature_c=temperature_c,
         )
+    
+    def _estimate_power_consumption(self, cpu_percent: float) -> Optional[float]:
+        """Estimate power consumption in milliwatts"""
+        try:
+            # Try to read from power monitoring (Android-specific)
+            power_paths = [
+                '/sys/class/power_supply/battery/power_now',
+                '/sys/class/power_supply/battery/current_now',
+            ]
+            
+            for path in power_paths:
+                if os.path.exists(path):
+                    with open(path, 'r') as f:
+                        power_uw = int(f.read().strip())
+                        # Convert to milliwatts and scale by CPU usage
+                        power_mw = (power_uw / 1000.0) * (cpu_percent / 100.0)
+                        return power_mw
+            
+            # Fallback: estimate based on CPU usage
+            # Typical ARM mobile CPU: ~2W at 100% load
+            base_power_mw = 500  # Base power consumption
+            cpu_power_mw = 2000 * (cpu_percent / 100.0)  # CPU power scaling
+            return base_power_mw + cpu_power_mw
+            
+        except Exception:
+            return None
+    
+    def _get_cpu_temperature(self) -> Optional[float]:
+        """Get CPU temperature in Celsius"""
+        try:
+            import os
+            thermal_base = '/sys/class/thermal'
+            if os.path.exists(thermal_base):
+                for zone in os.listdir(thermal_base):
+                    if zone.startswith('thermal_zone'):
+                        type_path = os.path.join(thermal_base, zone, 'type')
+                        temp_path = os.path.join(thermal_base, zone, 'temp')
+                        
+                        if os.path.exists(type_path) and os.path.exists(temp_path):
+                            with open(type_path, 'r') as f:
+                                zone_type = f.read().strip().lower()
+                                if 'cpu' in zone_type or 'soc' in zone_type:
+                                    with open(temp_path, 'r') as f:
+                                        temp_millidegrees = int(f.read().strip())
+                                        return temp_millidegrees / 1000.0
+        except Exception:
+            pass
+        return None
+    
+    def is_thermal_throttling(self, threshold_c: float = 80.0) -> bool:
+        """
+        Check if CPU is thermal throttling.
+        
+        Args:
+            threshold_c: Temperature threshold in Celsius (default: 80°C)
+            
+        Returns:
+            True if temperature exceeds threshold
+        """
+        temp = self._get_cpu_temperature()
+        if temp is None:
+            return False
+        return temp >= threshold_c
+    
+    def get_thermal_state(self) -> Dict:
+        """
+        Get current thermal state information.
+        
+        Returns:
+            Dictionary with thermal state, temperature, and throttling status
+        """
+        temp = self._get_cpu_temperature()
+        is_throttling = self.is_thermal_throttling() if temp else False
+        
+        return {
+            'temperature_c': temp,
+            'is_throttling': is_throttling,
+            'threshold_c': 80.0,
+            'status': 'throttling' if is_throttling else ('normal' if temp else 'unknown'),
+        }
     
     def record_inference(self, model_name: str, latency_ms: float):
         """Record inference latency for a model"""
@@ -179,17 +270,27 @@ class ARMPerformanceMonitor:
                     'cpu_max': 0,
                     'memory_avg_mb': 0,
                     'memory_max_mb': 0,
+                    'power_avg_mw': 0,
+                    'power_max_mw': 0,
+                    'temperature_avg_c': 0,
+                    'temperature_max_c': 0,
                     'inference_stats': {},
                 }
             
             cpu_values = [m.cpu_percent for m in self.metrics_history]
             memory_values = [m.memory_mb for m in self.metrics_history]
+            power_values = [m.power_mw for m in self.metrics_history if m.power_mw is not None]
+            temp_values = [m.temperature_c for m in self.metrics_history if m.temperature_c is not None]
             
             return {
                 'cpu_avg': sum(cpu_values) / len(cpu_values),
                 'cpu_max': max(cpu_values),
                 'memory_avg_mb': sum(memory_values) / len(memory_values),
                 'memory_max_mb': max(memory_values),
+                'power_avg_mw': sum(power_values) / len(power_values) if power_values else 0,
+                'power_max_mw': max(power_values) if power_values else 0,
+                'temperature_avg_c': sum(temp_values) / len(temp_values) if temp_values else 0,
+                'temperature_max_c': max(temp_values) if temp_values else 0,
                 'inference_stats': self.get_all_inference_stats(),
                 'samples': len(self.metrics_history),
             }
@@ -215,6 +316,14 @@ CPU Usage:
 Memory Usage:
   Average: {summary['memory_avg_mb']:.1f} MB
   Maximum: {summary['memory_max_mb']:.1f} MB
+
+Power Consumption:
+  Average: {summary['power_avg_mw']:.1f} mW
+  Maximum: {summary['power_max_mw']:.1f} mW
+
+Thermal:
+  Average Temperature: {summary['temperature_avg_c']:.1f}°C
+  Maximum Temperature: {summary['temperature_max_c']:.1f}°C
 
 Inference Performance:
 """

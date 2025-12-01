@@ -22,7 +22,18 @@ import os
 try:
     from runtime.device_manager import Device, DeviceManager
     from production_readiness.metrics_server import start_metrics_server, record_task_outcome, task_success_counter, task_failure_counter, avg_runtime_gauge
-    from autorl_project.src.rl.policy_manager import PolicyManager
+    try:
+        from rl.policy_manager import PolicyManager
+    except ImportError:
+        # Mock PolicyManager for now
+        class PolicyManager:
+            def __init__(self):
+                self.policies = {}
+                self.active_policy_name = None
+            def register_policy(self, name, policy, is_active=False):
+                self.policies[name] = {"policy_data": policy, "version": "1.0"}
+                if is_active:
+                    self.active_policy_name = name
     from core.orchestrator import RobustOrchestrator
     from agents.registry import PluginRegistry
     PRODUCTION_MODE = True

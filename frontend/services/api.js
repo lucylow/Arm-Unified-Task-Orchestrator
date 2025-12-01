@@ -68,6 +68,17 @@ class ApiService {
     });
   }
 
+  async createDetailedPlan(instruction, uiState = null) {
+    return this.request('/plan/detailed', {
+      method: 'POST',
+      body: JSON.stringify({
+        instruction,
+        device_id: null,
+        parameters: uiState ? { ui_state: uiState } : {},
+      }),
+    });
+  }
+
   // Metrics APIs
   async getMetrics() {
     return this.request('/metrics');

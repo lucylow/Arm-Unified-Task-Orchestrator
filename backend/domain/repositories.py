@@ -1,8 +1,8 @@
 """Domain Layer - Repository Interfaces (Abstract)"""
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from src.domain.entities import MobileTask, TaskResult
-from src.runtime.device_manager import Device
+from domain.entities import MobileTask, TaskResult
+from runtime.device_manager import Device
 
 
 class DeviceRepository(ABC):

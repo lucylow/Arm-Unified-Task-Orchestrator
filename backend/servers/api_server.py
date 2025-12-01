@@ -10,7 +10,16 @@ import os
 from runtime.device_manager import Device, DeviceManager
 from production_readiness.logging_utils import log_event, store_secure_log, decrypt_secure_log
 from production_readiness.metrics_server import start_metrics_server, task_success_counter, task_failure_counter, current_active_tasks_gauge, avg_runtime_gauge
-from autorl_project.src.rl.policy_manager import PolicyManager
+# PolicyManager not available - using mock
+try:
+    from rl.policy_manager import PolicyManager
+except ImportError:
+    # Mock PolicyManager for now
+    class PolicyManager:
+        def __init__(self):
+            self.policies = {}
+        def register_policy(self, name, policy):
+            self.policies[name] = policy
 from llm.llm_planner import LLMPlanner
 from perception.visual_perception import VisualPerception
 

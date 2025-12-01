@@ -1,8 +1,8 @@
 """Infrastructure Layer - In-Memory Result Repository Implementation"""
 from typing import List, Dict
 from collections import defaultdict
-from src.domain.repositories import ResultRepository
-from src.domain.entities import TaskResult
+from domain.repositories import ResultRepository
+from domain.entities import TaskResult
 
 
 class InMemoryResultRepository(ResultRepository):

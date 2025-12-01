@@ -8,8 +8,20 @@ from typing import List, Dict, Any
 
 from runtime.device_manager import Device, DeviceManager
 from tools.action_execution import ActionExecutor
-from autorl_project.src.runtime.recovery import RecoveryManager
-from autorl_project.src.rl.policy_manager import PolicyManager, shadow_run
+from error_handling.recovery import RecoveryManager
+# PolicyManager and shadow_run not available - using mock
+try:
+    from rl.policy_manager import PolicyManager, shadow_run
+except ImportError:
+    # Mock PolicyManager for now
+    class PolicyManager:
+        def __init__(self):
+            self.policies = {}
+        def register_policy(self, name, policy):
+            self.policies[name] = policy
+    
+    async def shadow_run(policy, func, *args, **kwargs):
+        return await func(*args, **kwargs)
 
 # New imports for enhanced functionality
 from perception.visual_perception import VisualPerception

@@ -26,7 +26,7 @@ from pathlib import Path
 import os
 
 # Import master agent system
-from master_agent_system import MasterAgentOrchestrator, AgentContext, AgentState
+from .master_agent_system import MasterAgentOrchestrator, AgentContext, AgentState
 
 # Conditional imports based on availability
 PRODUCTION_MODE = os.getenv("AUTORL_MODE", "demo") == "production"
@@ -37,8 +37,19 @@ try:
         from perception.visual_perception import VisualPerception
         from llm.llm_planner import LLMPlanner
         from tools.action_execution import ActionExecutor
-        from autorl_project.src.runtime.recovery import RecoveryManager
-        from autorl_project.src.rl.policy_manager import PolicyManager
+        from error_handling.recovery import RecoveryManager
+        try:
+            from rl.policy_manager import PolicyManager
+        except ImportError:
+            # Mock PolicyManager for now
+            class PolicyManager:
+                def __init__(self):
+                    self.policies = {}
+                    self.active_policy_name = None
+                def register_policy(self, name, policy, is_active=False):
+                    self.policies[name] = {"policy_data": policy, "version": "1.0"}
+                    if is_active:
+                        self.active_policy_name = name
         from agents.registry import PluginRegistry
         from production_readiness.metrics_server import start_metrics_server, record_task_metrics
         print("✅ Production modules loaded")
@@ -316,6 +327,38 @@ async def get_tasks():
     """Get task history"""
     return state.task_history[-100:]  # Last 100 tasks
 
+@app.post("/api/plan/detailed")
+async def create_detailed_plan(task_req: TaskRequest):
+    """Generate a detailed plan without executing it - for preview and interaction"""
+    try:
+        # Import LLM planner
+        if PRODUCTION_MODE:
+            from llm.llm_planner import LLMPlanner
+            planner = LLMPlanner()
+        else:
+            # Demo mode - create mock planner
+            from llm.llm_planner import LLMPlanner
+            planner = LLMPlanner()
+        
+        # Generate detailed plan
+        detailed_plan = planner.generate_detailed_plan(
+            instruction=task_req.instruction,
+            ui_state=task_req.parameters.get("ui_state") if task_req.parameters else None
+        )
+        
+        state.add_activity(f"Detailed plan generated: {task_req.instruction[:50]}...", "info")
+        
+        return JSONResponse({
+            "status": "success",
+            "plan": detailed_plan
+        })
+    except Exception as e:
+        logger.error(f"Error generating detailed plan: {e}")
+        return JSONResponse({
+            "status": "error",
+            "message": str(e)
+        }, status_code=500)
+
 @app.post("/api/tasks", response_model=TaskResponse)
 async def create_task(task_req: TaskRequest):
     """Create and execute a new task"""
@@ -426,7 +469,7 @@ async def execute_with_orchestrator(task_id: str, task_req: TaskRequest) -> Agen
     for agent_name, agent in state.orchestrator.agents.items():
         original_execute[agent_name] = agent.execute
         
-        async def create_broadcast_wrapper(name, orig_func):
+                async def create_broadcast_wrapper(name, orig_func):
             async def wrapper(context):
                 # Broadcast agent state
                 event_map = {
@@ -438,15 +481,35 @@ async def execute_with_orchestrator(task_id: str, task_req: TaskRequest) -> Agen
                 }
                 
                 event = event_map.get(name, name)
-                await ws_manager.broadcast({
+                
+                # Enhanced broadcast with step information
+                broadcast_data = {
                     "event": event,
                     "task_id": task_id,
                     "text": f"{name.capitalize()} agent active...",
-                    "agent": name
-                })
+                    "agent": name,
+                    "timestamp": time.time()
+                }
+                
+                # Add step information if available in context
+                if hasattr(context, 'current_step'):
+                    broadcast_data["step"] = context.current_step
+                    broadcast_data["total_steps"] = getattr(context, 'total_steps', 0)
+                
+                await ws_manager.broadcast(broadcast_data)
                 
                 # Execute original function
                 result = await orig_func(context)
+                
+                # Broadcast step completion for execution agent
+                if name == 'execution' and hasattr(context, 'current_step'):
+                    await ws_manager.broadcast({
+                        "event": "step_completed",
+                        "task_id": task_id,
+                        "step": context.current_step,
+                        "total_steps": getattr(context, 'total_steps', 0),
+                        "timestamp": time.time()
+                    })
                 
                 # Broadcast completion if appropriate
                 if result.error:
@@ -454,7 +517,8 @@ async def execute_with_orchestrator(task_id: str, task_req: TaskRequest) -> Agen
                         "event": "error",
                         "task_id": task_id,
                         "text": result.error,
-                        "severity": "warning"
+                        "severity": "warning",
+                        "timestamp": time.time()
                     })
                 
                 return result
