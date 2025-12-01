@@ -36,14 +36,15 @@ jobs:
     
     - name: Export and quantize model
       run: |
-        python3 model/export_model.py
-        python3 model/quantize_model.py
+        python3 scripts/export_model.py --formats torchscript onnx
+        python3 scripts/quantize_model.py --input models/model/model_mobile.pt --verify
     
     - name: Copy assets to Android app
       run: |
-        mkdir -p mobile/android/app/src/main/assets
-        cp model/model_mobile_quant.pt mobile/android/app/src/main/assets/
-        cp demo/test_screen.png mobile/android/app/src/main/assets/
+        mkdir -p mobile/android/app/src/main/assets/models
+        cp models/model/model_mobile_quant.pt mobile/android/app/src/main/assets/models/ 2>/dev/null || true
+        cp models/model/model_mobile.onnx mobile/android/app/src/main/assets/models/ 2>/dev/null || true
+        cp demo/test_screen.png mobile/android/app/src/main/assets/ 2>/dev/null || true
     
     - name: Grant execute permission for gradlew
       run: |

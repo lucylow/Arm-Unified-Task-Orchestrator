@@ -133,64 +133,104 @@ export default function Dashboard() {
   if (error) return <div className="p-6 text-center text-destructive">{error}</div>
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-              <Brain className="w-10 h-10 text-primary animate-pulse" />
-              AutoRL AI Agent Platform
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl">
+      {/* Enhanced Header Section */}
+      <div className="mb-8 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3 flex items-center gap-3">
+              <div className="relative">
+                <Brain className="w-10 h-10 text-primary animate-pulse" />
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+              </div>
+              <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                AutoRL AI Agent Platform
+              </span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm sm:text-base">
               🤖 Autonomous Mobile Automation with AI Agents • {new Date().toLocaleString()}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant={isConnected ? 'outline' : 'secondary'} className="text-xs">
-              <span className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <Badge 
+              variant={isConnected ? 'outline' : 'secondary'} 
+              className={`
+                text-xs px-3 py-1.5 transition-all duration-300
+                ${isConnected 
+                  ? 'border-green-500/50 bg-green-500/10 text-green-500 hover:bg-green-500/20' 
+                  : 'border-gray-500/50 bg-gray-500/10 text-gray-500'
+                }
+              `}
+            >
+              <span className={`
+                w-2 h-2 rounded-full mr-1.5 inline-block
+                ${isConnected 
+                  ? 'bg-green-500 animate-pulse shadow-lg shadow-green-500/50' 
+                  : 'bg-gray-400'
+                }
+              `}></span>
               {isConnected ? 'AI Agent Connected' : 'AI Agent Disconnected'}
             </Badge>
-            <Badge variant={systemStatus === 'active' ? 'default' : 'destructive'}>
-              <Activity className="w-4 h-4 mr-1" />
+            <Badge 
+              variant={systemStatus === 'active' ? 'default' : 'destructive'}
+              className={`
+                text-xs px-3 py-1.5 transition-all duration-300
+                ${systemStatus === 'active' 
+                  ? 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30' 
+                  : ''
+                }
+              `}
+            >
+              <Activity className={`w-4 h-4 mr-1.5 ${systemStatus === 'active' ? 'animate-pulse' : ''}`} />
               {systemStatus === 'active' ? 'Agent Active' : 'Agent Idle'}
             </Badge>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard
-          title="Tasks Completed"
-          value={metrics.tasksCompleted}
-          icon={<CheckCircle className="w-6 h-6 text-primary" />}
-          trend="+12%"
-        />
-        <MetricCard
-          title="Success Rate"
-          value={`${metrics.successRate.toFixed(1)}%`}
-          icon={<Zap className="w-6 h-6 text-primary" />}
-          trend="+2.3%"
-        />
-        <MetricCard
-          title="Avg Execution"
-          value={`${metrics.avgExecutionTime}s`}
-          icon={<Clock className="w-6 h-6 text-primary" />}
-          trend="-5.2s"
-        />
-        <MetricCard
-          title="Active Devices"
-          value={metrics.activeDevices}
-          icon={<Smartphone className="w-6 h-6 text-primary" />}
-          trend="stable"
-        />
+      {/* Enhanced Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <MetricCard
+            title="Tasks Completed"
+            value={metrics.tasksCompleted}
+            icon={<CheckCircle className="w-6 h-6" />}
+            trend="+12%"
+          />
+        </div>
+        <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <MetricCard
+            title="Success Rate"
+            value={`${metrics.successRate.toFixed(1)}%`}
+            icon={<Zap className="w-6 h-6" />}
+            trend="+2.3%"
+          />
+        </div>
+        <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <MetricCard
+            title="Avg Execution"
+            value={`${metrics.avgExecutionTime}s`}
+            icon={<Clock className="w-6 h-6" />}
+            trend="-5.2s"
+          />
+        </div>
+        <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <MetricCard
+            title="Active Devices"
+            value={metrics.activeDevices}
+            icon={<Smartphone className="w-6 h-6" />}
+            trend="stable"
+          />
+        </div>
       </div>
 
-      <div className="mb-6">
+      {/* Task Control Panel */}
+      <div className="mb-6 animate-fade-in" style={{ animationDelay: '0.5s' }}>
         <TaskControlPanel devices={devices} onTaskCreated={fetchData} />
       </div>
 
       {/* AI Agent Features Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-3">
@@ -243,34 +283,39 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Activity className="w-5 h-5 mr-2 text-primary" />
-              Live AI Agent Execution
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+        <Card className="lg:col-span-2 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 border-primary/20">
+          <CardHeader className="border-b border-border/50">
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <Activity className="w-5 h-5 text-primary" />
+              </div>
+              <span>Live AI Agent Execution</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {currentTask ? <TaskExecutionView task={currentTask} /> : <EmptyState />}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Smartphone className="w-5 h-5 mr-2 text-primary" />
-              Connected Devices
+        <Card className="transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 border-primary/20">
+          <CardHeader className="border-b border-border/50">
+            <CardTitle className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <Smartphone className="w-5 h-5 text-primary" />
+              </div>
+              <span>Connected Devices</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <DeviceStatusPanel devices={devices} />
           </CardContent>
         </Card>
       </div>
 
       {/* Additional AI Agent Components */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <LiveAgentActivity />
         </div>

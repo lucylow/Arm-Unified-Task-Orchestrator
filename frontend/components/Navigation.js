@@ -160,13 +160,15 @@ const Navigation = () => {
         anchor="left" 
         open={drawerOpen} 
         onClose={handleDrawerToggle}
+        transitionDuration={300}
         PaperProps={{
           sx: {
             width: 280,
-            background: 'linear-gradient(180deg, rgba(18, 24, 43, 0.95) 0%, rgba(13, 17, 31, 0.95) 100%)',
+            background: 'linear-gradient(180deg, rgba(18, 24, 43, 0.98) 0%, rgba(13, 17, 31, 0.98) 100%)',
             backdropFilter: 'blur(20px)',
             borderRight: '1px solid rgba(30, 136, 229, 0.2)',
-            boxShadow: '4px 0 20px rgba(30, 136, 229, 0.2)',
+            boxShadow: '4px 0 30px rgba(30, 136, 229, 0.3)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           }
         }}
       >
@@ -207,7 +209,7 @@ const Navigation = () => {
                 sx={{
                   borderRadius: 2,
                   mb: 0.5,
-                  transition: 'all 0.3s',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   position: 'relative',
                   overflow: 'hidden',
                   '&::before': isActive(item.path) ? {
@@ -219,17 +221,22 @@ const Navigation = () => {
                     width: 4,
                     bgcolor: theme.palette.primary.main,
                     borderRadius: '0 4px 4px 0',
+                    boxShadow: `0 0 10px ${theme.palette.primary.main}`,
                   } : {},
                   '&.Mui-selected': {
                     bgcolor: 'rgba(30, 136, 229, 0.15)',
                     borderLeft: `4px solid ${theme.palette.primary.main}`,
                     '&:hover': {
                       bgcolor: 'rgba(30, 136, 229, 0.25)',
+                      transform: 'translateX(4px)',
                     }
                   },
                   '&:hover': {
                     bgcolor: 'rgba(30, 136, 229, 0.1)',
                     transform: 'translateX(4px)',
+                    '& .MuiListItemIcon-root': {
+                      transform: 'scale(1.1)',
+                    }
                   }
                 }}
               >
@@ -237,7 +244,7 @@ const Navigation = () => {
                   sx={{ 
                     color: isActive(item.path) ? theme.palette.primary.main : theme.palette.text.secondary,
                     minWidth: 40,
-                    transition: 'all 0.3s',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
                   {item.icon}

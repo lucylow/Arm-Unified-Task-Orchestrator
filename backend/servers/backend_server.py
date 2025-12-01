@@ -23,7 +23,7 @@ try:
     from runtime.device_manager import Device, DeviceManager
     from production_readiness.metrics_server import start_metrics_server, record_task_outcome, task_success_counter, task_failure_counter, avg_runtime_gauge
     from autorl_project.src.rl.policy_manager import PolicyManager
-    from orchestrator import RobustOrchestrator
+    from core.orchestrator import RobustOrchestrator
     from agents.registry import PluginRegistry
     PRODUCTION_MODE = True
 except ImportError:

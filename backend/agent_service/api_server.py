@@ -5,7 +5,7 @@ from typing import Optional, Dict, Any, List
 import uuid
 from .auth import get_user
 from .omh_auth import get_omh_user, get_omh_user_with_location, require_role, omh_client
-from .plugin_manager import PluginManager
+from ..marketplace.plugin_manager import PluginManager
 from .llm_adapter import LLMSandbox
 from . import mock_api
 from .device_manager import AsyncDeviceManager

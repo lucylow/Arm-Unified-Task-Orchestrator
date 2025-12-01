@@ -50,28 +50,40 @@ export function TaskControlPanel({ devices, onTaskCreated }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create New Task</CardTitle>
+    <Card className="border-primary/20 hover:border-primary/40 transition-all duration-300">
+      <CardHeader className="border-b border-border/50">
+        <CardTitle className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Play className="w-5 h-5 text-primary" />
+          </div>
+          <span>Create New Task</span>
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Task Description</label>
+      <CardContent className="pt-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Task Description
+            </label>
             <Textarea
               placeholder="Describe what you want to automate... e.g., 'Open Instagram and like the latest post'"
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
               rows={4}
               disabled={isSubmitting}
-              className="resize-none"
+              className="resize-none transition-all duration-200 focus:ring-2 focus:ring-primary/20"
             />
+            <p className="text-xs text-muted-foreground">
+              Be specific about what you want the AI agent to do
+            </p>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Target Device</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              Target Device
+            </label>
             <Select value={selectedDevice} onValueChange={setSelectedDevice} disabled={isSubmitting}>
-              <SelectTrigger>
+              <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-primary/20">
                 <SelectValue placeholder="Auto-select device" />
               </SelectTrigger>
               <SelectContent>
@@ -86,12 +98,20 @@ export function TaskControlPanel({ devices, onTaskCreated }) {
           </div>
 
           {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg animate-slide-up-fade">
+              <p className="text-sm font-medium text-destructive flex items-center gap-2">
+                <span className="text-destructive">⚠</span>
+                {error}
+              </p>
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            className="w-full transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5" 
+            disabled={isSubmitting}
+            size="lg"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
