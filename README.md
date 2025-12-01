@@ -1,8 +1,8 @@
-# 🤖 Arm-Unified Task Orchestrator 
+# 🤖 Arm-Unified Task Orchestrator  *On-Device AI-Powered Mobile Automation for ARM Processors* 
 
 <div align="center">
 
-### *On-Device AI-Powered Mobile Automation for ARM Processors* Arm-Unified Task Orchestrator (A.U.T.O.) shows that an Arm-powered mobile device can function as a **fully self-contained autonomous agent**—capable of perceiving, planning, and executing tasks in real time without any cloud services.
+### Arm-Unified Task Orchestrator (A.U.T.O.) shows that an Arm-powered mobile device can function as a **fully self-contained autonomous agent**—capable of perceiving, planning, and executing tasks in real time without any cloud services.
 
 
 [![ARM](https://img.shields.io/badge/ARM-Architecture-blue.svg)](https://developer.arm.com/)
