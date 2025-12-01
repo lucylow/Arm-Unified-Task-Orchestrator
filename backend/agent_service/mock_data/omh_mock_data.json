@@ -1,0 +1,101 @@
+{
+  "auth_tokens": {
+    "basic": {
+      "access_token": "mock_access_token_abc123xyz456",
+      "token_type": "Bearer",
+      "expires_in": 3600,
+      "refresh_token": "mock_refresh_token_xyz789abc123",
+      "scope": "openid profile email",
+      "id_token": "mock_id_token_jwt_payload"
+    },
+    "jwt_format": {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJVc2VyMTIzIiwibmFtZSI6IkFsaWNlIFNtaXRoIiwiYWRtaW4iOnRydWUsImlhdCI6MTY5NjQ2ODAwMCwiZXhwIjoxNjk2NDcxNjAwfQ._sVTeECHBI_sdMjXSQ7Vow_index53jZnZ1049k",
+      "token_type": "Bearer",
+      "expires_in": 3600,
+      "scope": "openid profile email"
+    },
+    "refresh_token": {
+      "refresh_token": "def502007d1deb2d1dbdaf9f9005d64f9c2953a1cc2957d5cd9aebb44f26ce2a137d75e6e2ead5b3a6bbf2269b2e785f10a0f0b76fcf69251bca84fc1f27e365c1c57dbeb85666753ef8b5739ee87f997b86773f08a46b36a49c5153c05ef2565b1392e439c3a5913def16c0e2e6d6702670370954121ae645e428ce"
+    },
+    "id_token": {
+      "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE2ZjY0MzQ3YjI3NjI0MDA3NjMwNzY4ZjNaIn0.eyJpc3MiOiJodHRwczovL29hdXRoLnRlc3RhcHAuY29tLyIsInN1YiI6IjEyMzQ1Njc4OTAiLCJhdWQiOiJteWFwcCIsImV4cCI6MTY5NjQ3MTYwMCwiaWF0IjoxNjk2NDY4MDAwLCJuYW1lIjoiQWxpY2UgU21pdGgiLCJlbWFpbCI6ImFsaWNlLnNtaXRoQGV4YW1wbGUuY29tIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYWxpY2UiLCJoaXN0b3J5X2xvZ2luX3RpbWUiOjE2OTY0NjgwMDB9.O7F9KeWY88XQcmYWjh8EIf7cFT4J-UQomW4-0oinvSIN9zdx0O6PUrZa3-LiKhMzRz",
+      "token_type": "JWT"
+    }
+  },
+  "user_profiles": [
+    {
+      "user_id": "user_1001",
+      "username": "alice.smith",
+      "email": "alice.smith@example.com",
+      "full_name": "Alice Smith",
+      "roles": ["user", "tester"],
+      "profile_picture_url": "https://example.com/profiles/alice.jpg",
+      "account_status": "active",
+      "last_login": "2025-10-10T10:00:00Z"
+    },
+    {
+      "user_id": "user_1002",
+      "username": "bob.jones",
+      "email": "bob.jones@example.com",
+      "full_name": "Bob Jones",
+      "roles": ["admin"],
+      "profile_picture_url": "https://example.com/profiles/bob.jpg",
+      "account_status": "active",
+      "last_login": "2025-10-09T15:30:00Z"
+    },
+    {
+      "user_id": "user_1003",
+      "username": "carol.wu",
+      "email": "carol.wu@example.com",
+      "full_name": "Carol Wu",
+      "roles": ["user"],
+      "profile_picture_url": "https://example.com/profiles/carol.jpg",
+      "account_status": "inactive",
+      "last_login": "2025-09-20T08:45:00Z"
+    },
+    {
+      "user_id": "user_001",
+      "username": "testuser",
+      "email": "testuser@example.com",
+      "full_name": "Test User",
+      "roles": ["user", "beta_tester"],
+      "profile_picture_url": "https://example.com/profiles/testuser.jpg",
+      "account_status": "active",
+      "last_login": "2025-10-10T12:00:00Z"
+    }
+  ],
+  "locations": [
+    {
+      "location": {
+        "latitude": 37.7749,
+        "longitude": -122.4194,
+        "address": "San Francisco, CA, USA",
+        "place_id": "mock_place_12345"
+      }
+    },
+    {
+      "location": {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "address": "New York, NY, USA",
+        "place_id": "mock_place_67890"
+      }
+    },
+    {
+      "location": {
+        "latitude": 34.0522,
+        "longitude": -118.2437,
+        "address": "Los Angeles, CA, USA",
+        "place_id": "mock_place_11111"
+      }
+    }
+  ],
+  "token_mappings": {
+    "mock_access_token_abc123xyz456": "user_1001",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJVc2VyMTIzIiwibmFtZSI6IkFsaWNlIFNtaXRoIiwiYWRtaW4iOnRydWUsImlhdCI6MTY5NjQ2ODAwMCwiZXhwIjoxNjk2NDcxNjAwfQ._sVTeECHBI_sdMjXSQ7Vow_index53jZnZ1049k": "user_1001",
+    "mock_access_token_bob": "user_1002",
+    "mock_access_token_carol": "user_1003",
+    "mock_access_token_123456789": "user_001"
+  }
+}
+

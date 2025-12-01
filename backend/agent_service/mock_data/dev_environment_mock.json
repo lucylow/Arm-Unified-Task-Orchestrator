@@ -1,0 +1,27 @@
+{
+  "mock_responses": {
+    "llm_planning": [
+      {
+        "input": "Send money to John",
+        "output": {
+          "steps": [
+            { "type": "TAP", "target": "payment_app" },
+            { "type": "TYPE", "target": "recipient", "text": "John" },
+            { "type": "TYPE", "target": "amount", "text": "25" },
+            { "type": "TAP", "target": "send_button" }
+          ],
+          "confidence": 0.92
+        }
+      }
+    ],
+    "ui_detection": [
+      {
+        "screenshot": "base64_encoded_image_data",
+        "detected_elements": [
+          { "type": "button", "text": "Send", "bbox": [100, 200, 150, 250] },
+          { "type": "input", "text": "", "bbox": [50, 100, 300, 140] }
+        ]
+      }
+    ]
+  }
+}

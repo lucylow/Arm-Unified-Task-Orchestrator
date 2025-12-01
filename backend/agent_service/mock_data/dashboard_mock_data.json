@@ -1,0 +1,22 @@
+{
+  "realtime_metrics": {
+    "active_tasks": 6,
+    "success_rate": 0.9245,
+    "avg_execution_time": 80.09,
+    "devices_online": 15,
+    "episodes_today": 109
+  },
+  "recent_tasks": [
+    { "task_id": "task-02262109", "device_id": "android_pixel_7_4", "instruction": "Add Pizza to Amazon shopping cart", "status": "pending" },
+    { "task_id": "task-9dd6ab1a", "device_id": "android_pixel_7_4", "instruction": "Send 'Hello world' to John via WhatsApp", "status": "pending" },
+    { "task_id": "task-80268df0", "device_id": "android_pixel_7_1", "instruction": "Book a flight from NYC to SF for 2025-10-15", "status": "failed" }
+  ],
+  "device_status": [
+    { "device_id": "android_pixel_7_1", "platform": "android", "model": "OnePlus 11", "status": "busy", "battery_level": 33 },
+    { "device_id": "android_galaxy_s23_2", "platform": "android", "model": "Galaxy A54", "status": "active", "battery_level": 45 }
+  ],
+  "performance_trends": [
+    { "date": "2025-10-01", "success_rate": 0.8669, "avg_time": 54.49, "tasks_completed": 44 },
+    { "date": "2025-10-02", "success_rate": 0.8243, "avg_time": 52.44, "tasks_completed": 31 }
+  ]
+}

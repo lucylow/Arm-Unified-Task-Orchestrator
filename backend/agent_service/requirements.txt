@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pytest
+requests
+starlette
+pydantic
+pytest-asyncio
+prometheus_client

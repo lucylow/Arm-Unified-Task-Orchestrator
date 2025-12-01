@@ -1,0 +1,173 @@
+# AutoRL Configuration File
+
+# Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 5000
+  mode: "demo"  # "demo" for mock data or "production" for real devices
+  debug: false
+  cors_origins: ["*"]
+
+# API Configuration
+api:
+  base_url: "http://localhost:5000/api"
+  websocket_url: "ws://localhost:5000/ws"
+  metrics_port: 8000
+  timeout: 300  # seconds
+
+# Frontend Configuration
+frontend:
+  port: 5173
+  api_base_url: "http://localhost:5000/api"
+  ws_url: "ws://localhost:5000/ws"
+
+# Appium Configuration
+appium:
+  server_url: "http://localhost:4723/wd/hub"
+  command_timeout: 60
+  new_command_timeout: 300
+  screenshot_dir: "./screenshots"
+  log_dir: "./logs"
+
+# Device Configuration
+devices:
+  max_parallel: 4
+  default_platform: "android"
+  auto_discover: true
+  # Predefined devices
+  preregistered:
+    - device_id: "emulator-5554"
+      platform: "android"
+      is_real: false
+    - device_id: "iPhone 15"
+      platform: "ios"
+      is_real: false
+    - device_id: "Pixel_7"
+      platform: "android"
+      is_real: false
+
+# AI/LLM Configuration
+llm:
+  provider: "openai"  # or "anthropic", "local"
+  model: "gpt-4"
+  temperature: 0.7
+  max_tokens: 2000
+  api_key_env: "OPENAI_API_KEY"
+  fallback_enabled: true
+
+# Perception Configuration
+perception:
+  screenshot_quality: 90
+  ocr_enabled: true
+  ocr_language: "eng"
+  vision_model: "default"
+  cache_enabled: true
+
+# RL/Policy Configuration
+reinforcement_learning:
+  initial_policy: "initial_policy"
+  shadow_mode_enabled: true
+  learning_rate: 0.001
+  epsilon_start: 0.1
+  epsilon_min: 0.01
+  epsilon_decay: 0.995
+  discount_factor: 0.99
+  experience_buffer_size: 10000
+
+# Plugin Configuration
+plugins:
+  directory: "./plugins"
+  auto_load: true
+  enabled_plugins:
+    - vision_boost
+    - error_recovery
+    - memory_cache
+    - omh_auth_plugin
+    - omh_maps_plugin
+  
+  # Plugin-specific configs
+  vision_boost:
+    confidence_threshold: 0.85
+    max_retries: 3
+  
+  error_recovery:
+    max_recovery_attempts: 3
+    recovery_timeout: 30
+  
+  memory_cache:
+    max_entries: 1000
+    ttl: 3600  # seconds
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file_enabled: true
+  log_file: "./logs/autorl.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+  sensitive_data_masking: true
+  secure_audit_log: true
+
+# Metrics Configuration
+metrics:
+  prometheus_enabled: true
+  prometheus_port: 8000
+  collection_interval: 5  # seconds
+  custom_metrics:
+    - task_success_rate
+    - task_completion_time
+    - device_utilization
+    - agent_performance
+
+# Database Configuration (for future use)
+database:
+  enabled: false
+  type: "sqlite"  # or "postgresql", "mysql"
+  path: "./data/autorl.db"
+  # For SQL databases
+  # host: "localhost"
+  # port: 5432
+  # username: "autorl"
+  # password_env: "DB_PASSWORD"
+  # database: "autorl_db"
+
+# Task Execution Configuration
+task_execution:
+  max_retries: 3
+  retry_delay: 5  # seconds
+  timeout: 300  # seconds
+  parallel_execution: true
+  max_parallel_tasks: 4
+  queue_size: 100
+
+# Error Handling Configuration
+error_handling:
+  recovery_enabled: true
+  fallback_strategy: "safe_state"  # or "retry", "abort"
+  error_logging: true
+  alert_on_critical: false
+  
+# Security Configuration
+security:
+  api_key_required: false
+  api_key_header: "X-API-Key"
+  rate_limiting: false
+  max_requests_per_minute: 60
+  encryption_enabled: false
+
+# Demo Mode Configuration
+demo_mode:
+  mock_data_enabled: true
+  simulated_delays: true
+  error_simulation_rate: 0.3  # 30% chance of errors
+  auto_recovery: true
+  mock_device_count: 3
+  
+# Development Configuration
+development:
+  hot_reload: true
+  debug_mode: true
+  profiling_enabled: false
+  test_mode: false
+

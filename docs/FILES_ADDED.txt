@@ -1,0 +1,49 @@
+AutoRL Arm Edition - New Files Added
+=====================================
+
+Mobile Android App:
+-------------------
+mobile/android/build.gradle
+mobile/android/settings.gradle
+mobile/android/gradle.properties
+mobile/android/gradlew
+mobile/android/gradle/wrapper/gradle-wrapper.properties
+mobile/android/gradle/wrapper/gradle-wrapper.jar
+mobile/android/app/build.gradle
+mobile/android/app/proguard-rules.pro
+mobile/android/app/src/main/AndroidManifest.xml
+mobile/android/app/src/main/java/com/autorl/MainActivity.kt
+mobile/android/app/src/main/java/com/autorl/ModelRunner.kt
+mobile/android/app/src/main/java/com/autorl/Utils.kt
+mobile/android/app/src/main/res/layout/activity_main.xml
+
+Model Export & Quantization:
+----------------------------
+model/export_model.py
+model/quantize_model.py
+model/model_mobile.pt (generated)
+model/model_mobile_quant.pt (generated)
+
+Planner:
+--------
+planner/tiny_planner.py
+
+Scripts:
+--------
+scripts/build_mobile.sh
+demo/run_demo.sh
+demo/test_screen.png
+
+CI/CD:
+------
+ci/android-build.yml
+.github/workflows/android-build.yml
+
+Documentation:
+--------------
+README_ARM_MOBILE.md
+HACKATHON_SUBMISSION.md
+IMPLEMENTATION_NOTES.md
+FILES_ADDED.txt (this file)
+
+Total: 27 new files

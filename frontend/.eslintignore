@@ -1,0 +1,10 @@
+# Node.js server files (use CommonJS, not ES modules)
+autorl-demo/mock-server/
+**/mock-server/
+server.js
+
+# Build outputs
+dist/
+build/
+node_modules/
+
