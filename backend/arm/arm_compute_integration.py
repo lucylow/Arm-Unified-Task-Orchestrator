@@ -14,14 +14,13 @@ This module provides:
 
 import numpy as np  # type: ignore[import-untyped]
 import logging
-from typing import Dict, Optional, Tuple, List, Callable, Any, Union
+from typing import Dict, Optional, Tuple, List, Callable, Any
 from dataclasses import dataclass, field
 from contextlib import contextmanager
 import time
 import threading
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, Future
-import os
 import platform
 from pathlib import Path
 
@@ -1652,10 +1651,6 @@ ARM Architecture Leverage:
 - Multi-threaded parallel processing with load balancing
 - Memory alignment for optimal NEON/SVE access
 - big.LITTLE CPU scheduling with thread affinity
-- Cache-aware batch sizing
-- Multi-threaded parallel processing
-- Memory alignment for optimal NEON access
-- big.LITTLE CPU scheduling
 - Cache-aware batch sizing
 """
         return report.strip()
