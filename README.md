@@ -1,4 +1,4 @@
-# 🤖 Arm-Unified Task Orchestrator  *On-Device AI-Powered Mobile Automation for ARM Processors* 
+# 🤖 Arm-Unified Task Orchestrator (A.U.T.O.) : *On-Device AI-Powered Mobile Automation for ARM Processors* 
 
 <div align="center">
 
