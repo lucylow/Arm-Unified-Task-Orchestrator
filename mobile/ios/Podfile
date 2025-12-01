@@ -1,0 +1,28 @@
+# Uncomment the next line to define a global platform for your project
+platform :ios, '15.0'
+
+target 'AutoRL' do
+  # Comment the next line if you don't want to use dynamic frameworks
+  use_frameworks!
+
+  # PyTorch Mobile for iOS
+  # Note: PyTorch Mobile iOS is available via CocoaPods
+  # Uncomment when PyTorch Mobile iOS pod is available
+  # pod 'PyTorchMobile', '~> 1.13.0'
+
+  # Standard iOS dependencies
+  pod 'Alamofire', '~> 5.8' # For networking (optional, can use URLSession)
+  
+  target 'AutoRLTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
+  end
+end
+

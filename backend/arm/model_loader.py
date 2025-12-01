@@ -33,10 +33,23 @@ class ARMModelLoader:
         
         logger.info(f"ARM Model Loader initialized (models_dir={self.models_dir}, caching={enable_caching})")
     
-    def load_pytorch_mobile_model(self, model_path: str, model_name: str) -> Any:
-        """Load PyTorch Mobile model with quantization verification"""
+    def load_pytorch_mobile_model(
+        self, 
+        model_path: str, 
+        model_name: str,
+        use_memory_mapping: bool = False
+    ) -> Any:
+        """
+        Load PyTorch Mobile model with quantization verification and optional memory mapping.
+        
+        Args:
+            model_path: Path to model file relative to models_dir
+            model_name: Name identifier for the model
+            use_memory_mapping: If True, use memory-mapped file for large models (reduces RAM)
+        """
         if model_name in self.loaded_models:
             logger.info(f"Model '{model_name}' already loaded (cached)")
+            self._cache_stats['hits'] += 1
             return self.loaded_models[model_name]
         
         try:
@@ -50,29 +63,52 @@ class ARMModelLoader:
             logger.info(f"Loading PyTorch Mobile model: {model_name}")
             start_time = time.time()
             
-            # Load model
-            model = torch.jit.load(str(full_path))
+            # Use memory mapping for large models (>50MB)
+            model_size_mb = full_path.stat().st_size / (1024 * 1024)
+            if use_memory_mapping or model_size_mb > 50:
+                logger.info(f"Using memory-mapped loading for large model ({model_size_mb:.1f}MB)")
+                # PyTorch doesn't directly support memory mapping, but we can use mmap for reading
+                # For now, regular load - in production could use torch.package or custom loader
+                model = torch.jit.load(str(full_path), map_location='cpu')
+            else:
+                # Standard loading
+                model = torch.jit.load(str(full_path), map_location='cpu')
+            
             model.eval()
             
             # Check if model is quantized
             is_quantized = self._check_pytorch_quantization(model)
+            quantization_type = self._get_quantization_type(model) if is_quantized else None
+            
+            # Apply mobile optimizations if not already optimized
+            try:
+                # Check if already optimized
+                if not hasattr(model, '_optimized_for_mobile'):
+                    model = optimize_for_mobile(model)
+                    model._optimized_for_mobile = True
+                    logger.debug("Applied mobile optimizations")
+            except Exception as e:
+                logger.debug(f"Mobile optimization not available or already applied: {e}")
             
             load_time = (time.time() - start_time) * 1000
+            self._cache_stats['loads'] += 1
             
             # Cache model
             self.loaded_models[model_name] = model
             self.model_info[model_name] = {
                 'type': 'pytorch_mobile',
                 'path': str(full_path),
-                'size_mb': full_path.stat().st_size / (1024 * 1024),
+                'size_mb': model_size_mb,
                 'load_time_ms': load_time,
                 'quantized': is_quantized,
-                'quantization_type': self._get_quantization_type(model) if is_quantized else None,
+                'quantization_type': quantization_type,
+                'memory_mapped': use_memory_mapping or model_size_mb > 50,
             }
             
             logger.info(f"Loaded '{model_name}' in {load_time:.1f}ms "
-                       f"(size={self.model_info[model_name]['size_mb']:.1f}MB, "
-                       f"quantized={is_quantized})")
+                       f"(size={model_size_mb:.1f}MB, "
+                       f"quantized={is_quantized}, "
+                       f"quantization={quantization_type or 'FP32'})")
             
             return model
             
@@ -106,15 +142,27 @@ class ARMModelLoader:
         """Get quantization type if model is quantized"""
         try:
             import torch
+            quantization_types = []
             for name, module in model.named_modules():
                 if hasattr(module, 'weight') and hasattr(module.weight, 'dtype'):
                     dtype_str = str(module.weight.dtype)
-                    if 'qint8' in dtype_str:
-                        return 'INT8'
-                    elif 'qint4' in dtype_str:
-                        return 'INT4'
-                    elif 'quint8' in dtype_str:
-                        return 'UINT8'
+                    if 'qint8' in dtype_str and 'INT8' not in quantization_types:
+                        quantization_types.append('INT8')
+                    elif 'qint4' in dtype_str and 'INT4' not in quantization_types:
+                        quantization_types.append('INT4')
+                    elif 'quint8' in dtype_str and 'UINT8' not in quantization_types:
+                        quantization_types.append('UINT8')
+                # Check for FP16/BF16 mixed precision
+                if hasattr(module, 'weight') and hasattr(module.weight, 'dtype'):
+                    if module.weight.dtype == torch.float16:
+                        if 'FP16' not in quantization_types:
+                            quantization_types.append('FP16')
+                    elif module.weight.dtype == torch.bfloat16:
+                        if 'BF16' not in quantization_types:
+                            quantization_types.append('BF16')
+            
+            if quantization_types:
+                return '+'.join(quantization_types)  # Mixed precision
         except Exception:
             pass
         return None

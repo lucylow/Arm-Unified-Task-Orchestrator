@@ -36,6 +36,8 @@ class ARMInferenceEngine:
         
         # Cache optimal batch size for common operations
         self._optimal_batch_size = None
+        self._performance_history = []  # Track recent inference latencies
+        self._adaptive_enabled = True
         
         logger.info("ARM Inference Engine initialized")
         logger.info(f"ARM Device: {self.is_arm}")
@@ -108,7 +110,16 @@ class ARMInferenceEngine:
             latency_ms = (time.time() - start_time) * 1000
             self.performance_monitor.record_inference(model_name, latency_ms)
             
+            # Update performance history for adaptive optimization
+            if self._adaptive_enabled:
+                self._performance_history.append(latency_ms)
+                if len(self._performance_history) > 100:
+                    self._performance_history.pop(0)
+            
             logger.info(f"Vision inference completed in {latency_ms:.1f}ms")
+            
+            # Get thermal state for adaptive recommendations
+            thermal_state = self.performance_monitor.get_thermal_state()
             
             return {
                 'success': True,
@@ -116,6 +127,8 @@ class ARMInferenceEngine:
                 'latency_ms': latency_ms,
                 'model': model_name,
                 'optimization_used': use_optimization,
+                'thermal_state': thermal_state,
+                'recommended_batch_size': self._get_adaptive_batch_size_for_model(model_name) if self._adaptive_enabled else None,
             }
             
         except Exception as e:
@@ -417,6 +430,109 @@ class ARMInferenceEngine:
     def get_compute_optimization_report(self) -> str:
         """Get ARM compute optimization report"""
         return self.compute_optimizer.get_optimization_report()
+    
+    def _get_adaptive_batch_size_for_model(self, model_name: str) -> int:
+        """Get adaptive batch size recommendation based on thermal state and performance history"""
+        if not self._adaptive_enabled:
+            return 1
+        
+        model_info = self.model_loader.get_model_info(model_name)
+        if not model_info:
+            return 1
+        
+        # Get thermal state
+        thermal_state = self.performance_monitor.get_thermal_state()
+        is_throttling = thermal_state.get('is_throttling', False)
+        
+        # Estimate model and input sizes
+        model_size_mb = model_info.get('size_mb', 10.0)
+        # Assume typical input size (224x224x3 RGB = ~0.6MB for FP32)
+        input_size_mb = 0.6
+        
+        # Get performance history
+        recent_history = self._performance_history[-10:] if len(self._performance_history) >= 10 else self._performance_history
+        
+        # Use compute optimizer's adaptive batch sizing
+        optimal_batch = self.compute_optimizer.get_adaptive_batch_size(
+            model_size_mb=model_size_mb,
+            input_size_mb=input_size_mb,
+            performance_history=recent_history,
+            thermal_state=thermal_state,
+            target_cache='l2'
+        )
+        
+        return optimal_batch
+    
+    def enable_adaptive_optimization(self, enabled: bool = True):
+        """Enable or disable adaptive optimization based on thermal and performance metrics"""
+        self._adaptive_enabled = enabled
+        logger.info(f"Adaptive optimization: {'enabled' if enabled else 'disabled'}")
+    
+    def get_performance_recommendations(self) -> Dict[str, Any]:
+        """Get performance optimization recommendations based on current state"""
+        thermal_state = self.performance_monitor.get_thermal_state()
+        current_metrics = self.performance_monitor.get_current_metrics()
+        summary = self.performance_monitor.get_summary()
+        
+        recommendations = {
+            'thermal_status': thermal_state.get('status', 'unknown'),
+            'current_cpu_percent': current_metrics.get('cpu_percent', 0),
+            'current_memory_mb': current_metrics.get('memory_mb', 0),
+            'recommendations': [],
+        }
+        
+        # Thermal throttling recommendations
+        if thermal_state.get('is_throttling', False):
+            recommendations['recommendations'].append({
+                'type': 'thermal',
+                'priority': 'high',
+                'message': 'Reduce batch size or pause heavy inference due to thermal throttling',
+                'action': 'Reduce batch size by 50% or pause for cooling',
+            })
+        
+        # High CPU usage recommendations
+        if current_metrics.get('cpu_percent', 0) > 90:
+            recommendations['recommendations'].append({
+                'type': 'cpu',
+                'priority': 'medium',
+                'message': 'High CPU usage detected, consider reducing parallelism',
+                'action': 'Reduce thread pool size or batch size',
+            })
+        
+        # High memory usage recommendations
+        if current_metrics.get('memory_mb', 0) > 500:
+            recommendations['recommendations'].append({
+                'type': 'memory',
+                'priority': 'medium',
+                'message': 'High memory usage, consider unloading unused models',
+                'action': 'Unload models not in use or use memory mapping',
+            })
+        
+        # Performance degradation detection
+        if len(self._performance_history) >= 10:
+            recent_avg = sum(self._performance_history[-5:]) / 5
+            older_avg = sum(self._performance_history[-10:-5]) / 5
+            if recent_avg > older_avg * 1.2:
+                recommendations['recommendations'].append({
+                    'type': 'performance',
+                    'priority': 'low',
+                    'message': 'Performance degradation detected, consider optimizing',
+                    'action': 'Review recent changes or reduce load',
+                })
+        
+        # Model-specific recommendations
+        inference_stats = summary.get('inference_stats', {})
+        for model_name, stats in inference_stats.items():
+            if stats.get('avg_ms', 0) > 100:  # Slow inference
+                recommendations['recommendations'].append({
+                    'type': 'model',
+                    'priority': 'medium',
+                    'message': f'Model {model_name} has high latency ({stats["avg_ms"]:.1f}ms)',
+                    'action': f'Consider quantizing {model_name} or using smaller batch sizes',
+                    'model': model_name,
+                })
+        
+        return recommendations
     
     def shutdown(self):
         """Shutdown engine and cleanup resources"""

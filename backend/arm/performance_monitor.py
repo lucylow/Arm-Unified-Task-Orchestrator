@@ -13,6 +13,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, asdict
 from collections import deque
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -302,9 +303,151 @@ class ARMPerformanceMonitor:
             self.inference_times.clear()
         logger.info("Reset ARM performance metrics")
     
-    def get_arm_optimization_report(self) -> str:
-        """Generate ARM optimization report"""
+    def predict_performance(self, model_name: str, lookahead_samples: int = 10) -> Dict[str, Any]:
+        """
+        Predict future performance based on historical data.
+        
+        Uses simple linear regression on recent latency measurements to predict
+        future inference times and identify performance trends.
+        
+        Args:
+            model_name: Name of the model to predict for
+            lookahead_samples: Number of future samples to predict
+            
+        Returns:
+            Dictionary with predictions and trend information
+        """
+        with self._lock:
+            if model_name not in self.inference_times or len(self.inference_times[model_name]) < 5:
+                return {
+                    'model': model_name,
+                    'predicted_avg_ms': None,
+                    'trend': 'insufficient_data',
+                    'trend_strength': 0.0,
+                    'warnings': ['Insufficient historical data for prediction']
+                }
+            
+            times = self.inference_times[model_name]
+            recent_times = times[-20:]  # Use last 20 samples
+            
+            # Simple linear regression to detect trend
+            x = np.arange(len(recent_times))
+            y = np.array(recent_times)
+            
+            # Calculate trend
+            coeffs = np.polyfit(x, y, 1)  # Linear fit
+            slope = coeffs[0]
+            intercept = coeffs[1]
+            
+            # Predict next values
+            future_x = np.arange(len(recent_times), len(recent_times) + lookahead_samples)
+            predicted_values = slope * future_x + intercept
+            
+            # Determine trend
+            if abs(slope) < 0.5:
+                trend = 'stable'
+            elif slope > 0:
+                trend = 'degrading'
+            else:
+                trend = 'improving'
+            
+            # Calculate trend strength (R²)
+            y_pred = slope * x + intercept
+            ss_res = np.sum((y - y_pred) ** 2)
+            ss_tot = np.sum((y - np.mean(y)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+            
+            warnings = []
+            if trend == 'degrading' and abs(slope) > 1.0:
+                warnings.append('Performance degradation detected - consider optimization')
+            if predicted_values[-1] > np.mean(recent_times) * 1.5:
+                warnings.append('Predicted latency significantly higher than average')
+            
+            return {
+                'model': model_name,
+                'predicted_avg_ms': float(np.mean(predicted_values)),
+                'predicted_min_ms': float(np.min(predicted_values)),
+                'predicted_max_ms': float(np.max(predicted_values)),
+                'trend': trend,
+                'trend_strength': float(r_squared),
+                'slope_ms_per_sample': float(slope),
+                'current_avg_ms': float(np.mean(recent_times)),
+                'warnings': warnings,
+            }
+    
+    def get_optimization_recommendations(self) -> List[Dict[str, Any]]:
+        """
+        Generate optimization recommendations based on current performance metrics.
+        
+        Returns:
+            List of recommendation dictionaries with priority and actions
+        """
+        recommendations = []
         summary = self.get_summary()
+        thermal_state = self.get_thermal_state()
+        
+        # Thermal recommendations
+        if thermal_state.get('is_throttling', False):
+            recommendations.append({
+                'priority': 'high',
+                'category': 'thermal',
+                'issue': 'Thermal throttling active',
+                'action': 'Reduce batch size, pause heavy inference, or improve cooling',
+                'impact': 'Prevents performance degradation and device damage'
+            })
+        
+        # Memory recommendations
+        if summary['memory_max_mb'] > 800:
+            recommendations.append({
+                'priority': 'medium',
+                'category': 'memory',
+                'issue': f"High memory usage ({summary['memory_max_mb']:.1f} MB)",
+                'action': 'Use memory-mapped model loading or reduce batch size',
+                'impact': 'Prevents OOM errors and improves stability'
+            })
+        
+        # CPU recommendations
+        if summary['cpu_avg'] > 80:
+            recommendations.append({
+                'priority': 'medium',
+                'category': 'cpu',
+                'issue': f"High CPU usage ({summary['cpu_avg']:.1f}%)",
+                'action': 'Reduce parallelism or use more efficient models',
+                'impact': 'Improves battery life and reduces thermal load'
+            })
+        
+        # Inference performance recommendations
+        for model, stats in summary['inference_stats'].items():
+            if stats['count'] > 10:
+                if stats['avg_ms'] > 100:
+                    recommendations.append({
+                        'priority': 'low',
+                        'category': 'performance',
+                        'issue': f"Model {model} has high latency ({stats['avg_ms']:.1f}ms avg)",
+                        'action': f'Consider quantizing {model} or using FP16',
+                        'impact': 'Can reduce inference time by 2-4x'
+                    })
+                
+                if stats['p95_ms'] > stats['avg_ms'] * 2:
+                    recommendations.append({
+                        'priority': 'medium',
+                        'category': 'consistency',
+                        'issue': f"Model {model} has inconsistent latency (high P95: {stats['p95_ms']:.1f}ms)",
+                        'action': 'Check for resource contention or thermal throttling',
+                        'impact': 'Improves predictable performance'
+                    })
+        
+        # Sort by priority
+        priority_order = {'high': 0, 'medium': 1, 'low': 2}
+        recommendations.sort(key=lambda x: priority_order.get(x['priority'], 3))
+        
+        return recommendations
+    
+    def get_arm_optimization_report(self) -> str:
+        """Generate comprehensive ARM optimization report with predictions"""
+        summary = self.get_summary()
+        thermal_state = self.get_thermal_state()
+        recommendations = self.get_optimization_recommendations()
         
         report = f"""
 ARM Performance Report
@@ -324,6 +467,8 @@ Power Consumption:
 Thermal:
   Average Temperature: {summary['temperature_avg_c']:.1f}°C
   Maximum Temperature: {summary['temperature_max_c']:.1f}°C
+  Status: {thermal_state.get('status', 'unknown')}
+  Throttling: {'Yes' if thermal_state.get('is_throttling', False) else 'No'}
 
 Inference Performance:
 """
@@ -335,11 +480,25 @@ Inference Performance:
     Average: {stats['avg_ms']:.1f} ms
     P50: {stats['p50_ms']:.1f} ms
     P95: {stats['p95_ms']:.1f} ms
+    P99: {stats['p99_ms']:.1f} ms
     Min: {stats['min_ms']:.1f} ms
     Max: {stats['max_ms']:.1f} ms
 """
+            
+            # Add predictions
+            prediction = self.predict_performance(model)
+            if prediction.get('predicted_avg_ms'):
+                report += f"    Predicted Avg: {prediction['predicted_avg_ms']:.1f} ms (trend: {prediction['trend']})\n"
         
         report += f"\nTotal Samples: {summary['samples']}\n"
+        
+        # Add recommendations
+        if recommendations:
+            report += "\nOptimization Recommendations:\n"
+            for rec in recommendations[:5]:  # Top 5 recommendations
+                report += f"\n  [{rec['priority'].upper()}] {rec['category'].upper()}: {rec['issue']}\n"
+                report += f"    Action: {rec['action']}\n"
+                report += f"    Impact: {rec['impact']}\n"
         
         return report
 
